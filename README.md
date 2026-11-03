@@ -31,3 +31,11 @@ Useful Gradle tasks and flags:
 
 Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
 For example, `core:clean` removes `build` folder only from the `core` project.
+
+## Loading levels
+
+To create or load a level, you need to modify the Level class and either
+- Add tiles to the level manually.
+- Choose a ready level preset.
+## Launching
+To launch this game, run the `run.bat` batch file or run `cd "project-path" ./gradlew.bat lwjgl3:run` in your system terminal.
