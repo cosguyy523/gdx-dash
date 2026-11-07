@@ -35,7 +35,6 @@ public class Main extends ApplicationAdapter {
     private Rectangle buttonTwo = new Rectangle(0,0,256,64);
     private Rectangle mouseRectangle = new Rectangle(0,0,1,1);
     private Texture cubeTexture;
-    private  boolean drawFinish = false;
     private float waitTime = 1f;
     private float distanceFinish = 132f;
     private Texture block;
@@ -57,6 +56,7 @@ public class Main extends ApplicationAdapter {
     private final String exitMessage = "Exit";
     private final String levelNullMessage = "[WARNING] The level is empty.Modify the level class!";
     private final String noMusicMessage = "[WARNING] The level has no music.";
+    private final String levelNameTooLongMessage = "(long level name)";
     private Rectangle tilePreset = new Rectangle(0,0,64,64);
     private Rectangle cameraRectangle = new Rectangle(0,0,1920,1080);
     private List<Tile> level = new ArrayList<Tile>();
@@ -69,7 +69,7 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void create() {
-        level = levelParsed.load();
+        level = levelParsed.load(0);
         for(int i = 0;i < 1000;i++){
             distanceFinish += 64f;
             level.add(new Tile(levelParsed.levelEnd, distanceFinish, (short) 3));
@@ -128,7 +128,7 @@ public class Main extends ApplicationAdapter {
         batch.setProjectionMatrix(viewport.getCamera().combined);
         shaperenderer.setProjectionMatrix(viewport.getCamera().combined);
         if(Gdx.input.isButtonPressed(Input.Buttons.LEFT) || Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-            localPlayer.doUpwardForce(360,false);
+            localPlayer.doUpwardForce(450,false);
         }
         if(cube.getX() > levelParsed.levelEnd){
             gameState = 3;
@@ -157,7 +157,6 @@ public class Main extends ApplicationAdapter {
             }
         }
         }
-        batch.draw(finish,levelParsed.levelEnd,100,64f,64f);
 
         
         cube.draw(batch);
@@ -205,6 +204,7 @@ public class Main extends ApplicationAdapter {
         }
         shaperenderer.end();
         batch.begin();
+        
         for(Tile _tile: level){
             switch(_tile.type){
             case(0):
@@ -217,10 +217,12 @@ public class Main extends ApplicationAdapter {
                batch.draw(spikeTexture,_tile.x,_tile.y);
                break;
             case(3):
+               batch.draw(finish,_tile.x,_tile.y);
                break;
             }
             
         }
+        batch.draw(line,cube.getX() - 2500,132,10000,1);
         batch.end();
         waitTime -= deltaTime;
         if(waitTime < 0f){
@@ -270,7 +272,13 @@ public class Main extends ApplicationAdapter {
 
         }
         font.draw(batch,playMessage,110,632,200,1,false);
-        font.draw(batch,levelParsed.levelName,340,632,200,1,false);
+        if(levelParsed.levelName.length() < 22){
+            font.draw(batch,levelParsed.levelName,340,632,200,1,false);  
+        }
+        else{
+            font.draw(batch,levelNameTooLongMessage,340,632,200,1,false);  
+        }
+        
         if (level.size() < 1){
             font.draw(batch,levelNullMessage,130,600,200,1,false);
         }
