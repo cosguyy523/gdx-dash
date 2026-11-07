@@ -2,60 +2,51 @@ package io.github.GdxDash;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Level{
+    public enum preset{
+        pillar,
+        array,
+    }
     public float levelEnd = 1000f;
     public String pathMusic = "";
     public String levelName = "No level";
-        /**
-        * Preset for a level
-        */
-        private List<Tile> levelPreset(){
-        levelEnd = 5000f;
-        levelName = "Level";
-        int distance1 = 512;
-        int distance2 = 1512;
-        List<Tile> preset = new ArrayList<>();
-        for(int i = 0;i <1000;i++){
-            preset.add(new Tile(i + 500, i + 80, (short)1));
+    public List<Tile> presets(preset __preset,float x,float y,int ammount,short type){
+        List<Tile> _preset = new ArrayList<>();
+        switch(__preset){
+            case preset.array:
+                for(int i = 0;i < ammount;i++){
+                    _preset.add(new Tile(x + 64 * i,y ,type));
+                }
+                break;
+            case preset.pillar:
+                for(int i = 0;i < ammount;i++){
+                    _preset.add(new Tile(x, y + 64 * i, type));
+                }
+                break;
         }
-        for(int i = 0;i<50f;i++){
-            distance2 += 200;
-            preset.add(new Tile(distance2, 1080, (short)1));
-            preset.add(new Tile(distance2,1145, (short)0));
-        }
-        for(int i = 0;i <100;i++){
-            distance1 += 64;
-            preset.add(new Tile(distance1,132, (short)2));
-
-        }
-        return preset;
+        return _preset;
     }
-        private List<Tile> jumpPadLevelPreset(){
-        List<Tile> preset = new ArrayList<Tile>();
-        levelName = "Jump pad level";
+    public List<Tile>load(int index){
+        levelName = "Hard jump";
         levelEnd = 10000f;
-        float distanceX = 400f;
-        float distanceY = 132f;
-        for(int i = 0;i <1000;i++){
-            distanceX += 128f;
-            distanceY += 10f;
-            preset.add(new Tile(distanceX,distanceY,(short)0));
+        List<Tile> blocks = presets(preset.array,500,132,5,(short)1);
+        List<Tile> spikes = presets(preset.array,400,132,2,(short) 2);
+        List<Tile> spikes2 = presets(preset.array,900,132,7,(short) 2);
+        List<Tile> tiles = new ArrayList<>();
+        for(Tile tile : blocks){
+            tiles.add(tile);
         }
-        return preset;
+        for(Tile tile : spikes){
+            tiles.add(tile);
         }
-
-    public List<Tile> load(){
-        List<Tile> levelList = new ArrayList<Tile>(){};
-        /*Your level here... */
-        /*Example:
-        levelList.add(new Tile(100f,100f,(short)1));
-        Or just set the list as one of the presets:
-        levelList = jumpPadLevelPreset();
-        You can also automate tile 
-        adding by using for loops
-        */
-       levelList = jumpPadLevelPreset();
-        return levelList;
+        for(Tile tile : spikes2){
+            tiles.add(tile);
+        }
+        List<List<Tile>> levelList = new ArrayList<List<Tile>>();
+        levelList.add(tiles);
+        return levelList.get(index);
     }
 }
+
