@@ -19,6 +19,7 @@ public class Level{
     //Makes the camera only follow the player if grounded
     //Can be used for a brief moment in the level,or constantly
     public boolean dontFollowCameraOnJump = false;
+    
     //The path to the music (if it exists)
     //if not leave this empty
     //The game will try to search the music both as an internal and an external path
