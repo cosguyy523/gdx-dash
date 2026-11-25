@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -30,6 +31,7 @@ public class Main extends ApplicationAdapter {
     public static int gameState = 3;
     private OrthographicCamera camera = new OrthographicCamera();
     private Viewport viewport;
+    private boolean turnThisOnThisToTrue = false;
     private SpriteBatch batch;
     private Rectangle buttonOne = new Rectangle(0,0,256,64);
     private Rectangle buttonTwo = new Rectangle(0,0,256,64);
@@ -51,13 +53,13 @@ public class Main extends ApplicationAdapter {
     private Sprite cube;
     private Player localPlayer;
     private float deltaTime;
-    private ShapeRenderer shaperenderer;
+    private ShapeRenderer shapeRenderer;
     private final String playMessage = "Play";
     private final String exitMessage = "Exit";
     private final String levelNullMessage = "[WARNING] The level is empty.Modify the level class!";
     private final String noMusicMessage = "[WARNING] The level has no music.";
     private final String levelNameTooLongMessage = "(long level name)";
-    private Rectangle tilePreset = new Rectangle(0,0,64,64);
+    private Rectangle tempRectangle = new Rectangle(0,0,64,64);
     private Rectangle cameraRectangle = new Rectangle(0,0,1920,1080);
     private List<Tile> level = new ArrayList<Tile>();
     private Level levelParsed = new Level();
@@ -78,9 +80,14 @@ public class Main extends ApplicationAdapter {
             music = Gdx.audio.newMusic(Gdx.files.internal(levelParsed.pathMusic));
         }
         catch(Exception e){
-
         }
-        shaperenderer = new ShapeRenderer();
+        try{
+            music = Gdx.audio.newMusic(Gdx.files.external(levelParsed.pathMusic));
+        }
+        catch(Exception e){
+        }
+        
+        shapeRenderer = new ShapeRenderer();
         localPlayer = new Player();
         viewport = new StretchViewport(1920, 1080, camera);
         batch = new SpriteBatch();
@@ -104,13 +111,13 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
+
         cameraRectangle.setX(viewport.getCamera().position.x - 960);                                                                          
         cameraRectangle.setY(viewport.getCamera().position.y - 540);
         mouse.set(Gdx.input.getX(),Gdx.input.getY(),0);
         camera.unproject(mouse);
         mouseRectangle.x = mouse.x;
         mouseRectangle.y = mouse.y;
-
         if(gameState == 1){
         if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)){
             gameState = 3;
@@ -119,16 +126,29 @@ public class Main extends ApplicationAdapter {
             music.play();
         }
         waitTime = 1f;
-        localPlayer.applyPhysics(deltaTime,level);
-        viewport.getCamera().position.set(cube.getX(),cube.getY(),0);
+        localPlayer.applyPhysics(deltaTime,level,levelParsed.levelEnd,levelParsed.speedOverRide);
+        if(levelParsed.dontFollowCameraOnJump && localPlayer.getGrounded() && localPlayer.getCubeBox().overlaps(cameraRectangle)){
+            viewport.getCamera().position.set(MathUtils.lerp(viewport.getCamera().position.x,cube.getX(),0.2f),MathUtils.lerp(viewport.getCamera().position.y,cube.getY(),0.2f),0);
+        }
+        else if (!localPlayer.getCubeBox().overlaps(cameraRectangle) || !levelParsed.dontFollowCameraOnJump){
+            viewport.getCamera().position.set(cube.getX(),cube.getY(),0);
+        }
         viewport.getCamera().update();
-        deltaTime = Gdx.graphics.getDeltaTime();
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         viewport.apply();
+        deltaTime = Gdx.graphics.getDeltaTime();
+        if(turnThisOnThisToTrue){
+            ScreenUtils.clear((float)Math.random(),(float)Math.random(),(float)Math.random(),(float)Math.random());
+            cube.setColor((float)Math.random(),(float)Math.random(),(float)Math.random(),(float)Math.random());
+        }
+        else{
+            ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+        }
+        
+        
         batch.setProjectionMatrix(viewport.getCamera().combined);
-        shaperenderer.setProjectionMatrix(viewport.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
         if(Gdx.input.isButtonPressed(Input.Buttons.LEFT) || Gdx.input.isKeyPressed(Input.Keys.SPACE)){
-            localPlayer.doUpwardForce(450,false);
+            localPlayer.doUpwardForce(600,false);
         }
         if(cube.getX() > levelParsed.levelEnd){
             gameState = 3;
@@ -138,9 +158,9 @@ public class Main extends ApplicationAdapter {
         batch.draw(line,cube.getX() -2500,132,5000,1);
 
         for(Tile _tile: level){
-            tilePreset.setX(_tile.x);
-            tilePreset.setY(_tile.y);
-            if(tilePreset.overlaps(cameraRectangle)){
+            tempRectangle.setX(_tile.x);
+            tempRectangle.setY(_tile.y);
+            if(tempRectangle.overlaps(cameraRectangle)){
             switch(_tile.type){
             case(0):
                batch.draw(jumpPad,_tile.x,_tile.y); 
@@ -169,43 +189,46 @@ public class Main extends ApplicationAdapter {
         if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)){
             gameState = 3;
         }
-        viewport.getCamera().position.set(cube.getX(),cube.getY(),0);
-        viewport.getCamera().update();
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        viewport.apply();
-        shaperenderer.setProjectionMatrix(viewport.getCamera().combined);
-        shaperenderer.begin(ShapeType.Line);
-        shaperenderer.setColor(Color.GOLD);                                                       
-        shaperenderer.rect(cube.getX() + 34.5f,cube.getY() + 34.5f,64,64);
+        shapeRenderer.begin(ShapeType.Line);
+        shapeRenderer.setColor(Color.GOLD);                                                       
+        shapeRenderer.rect(cube.getX() + 34.5f,cube.getY() + 34.5f,64,64);
         for(Tile _tile : level){
-           tilePreset.x = _tile.x;
-           tilePreset.y = _tile.y;
+           tempRectangle.x = _tile.x;
+           tempRectangle.y = _tile.y;
+        if(cameraRectangle.overlaps(tempRectangle)){
+
+        
             switch(_tile.type){
             case(0):
-               tilePreset.width = 64;
-               tilePreset.height = 16;
-               shaperenderer.setColor(Color.VIOLET);
-               shaperenderer.rect(tilePreset.x, tilePreset.y, tilePreset.width, tilePreset.height);
+               tempRectangle.width = 64;
+               tempRectangle.height = 16;
+               shapeRenderer.setColor(Color.VIOLET);
+               shapeRenderer.rect(tempRectangle.x, tempRectangle.y, tempRectangle.width, tempRectangle.height);
                break;
             case(1):
-               tilePreset.width = 64;
-               tilePreset.height = 64;
-               shaperenderer.setColor(Color.BLUE);
-               shaperenderer.rect(tilePreset.x, tilePreset.y, tilePreset.width, tilePreset.height);
+               tempRectangle.width = 64;
+               tempRectangle.height = 64;
+               shapeRenderer.setColor(Color.BLUE);
+               shapeRenderer.rect(tempRectangle.x, tempRectangle.y, tempRectangle.width, tempRectangle.height);
                break;
             case(2):
-               tilePreset.width = 32;
-               tilePreset.height = 32;
-               tilePreset.x = tilePreset.x + 15f;
-               shaperenderer.setColor(Color.RED);
-               shaperenderer.rect(tilePreset.x, tilePreset.y, tilePreset.width, tilePreset.height);
+               tempRectangle.width = 16;
+               tempRectangle.height = 32;
+               tempRectangle.x = tempRectangle.x + 15f;
+               shapeRenderer.setColor(Color.RED);
+               shapeRenderer.rect(tempRectangle.x, tempRectangle.y, tempRectangle.width, tempRectangle.height);
                break;
             }
         }
-        shaperenderer.end();
+        }
+        shapeRenderer.end();
         batch.begin();
         
         for(Tile _tile: level){
+            tempRectangle.x = _tile.x;
+            tempRectangle.y = _tile.y;
+            if(tempRectangle.overlaps(cameraRectangle)){
             switch(_tile.type){
             case(0):
                batch.draw(jumpPad,_tile.x,_tile.y); 
@@ -220,9 +243,10 @@ public class Main extends ApplicationAdapter {
                batch.draw(finish,_tile.x,_tile.y);
                break;
             }
+        }
             
         }
-        batch.draw(line,cube.getX() - 2500,132,10000,1);
+        batch.draw(line,cube.getX() - 5000,132,100000,1);
         batch.end();
         waitTime -= deltaTime;
         if(waitTime < 0f){
@@ -307,3 +331,4 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
     }
 }
+
