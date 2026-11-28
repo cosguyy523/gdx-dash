@@ -126,7 +126,6 @@ public class Player {
             Yvelocity = upwardForce;
             grounded = false;
         }
-        System.out.println(cube.getRotation());
     }
     public void resetVariables(){
         invulnerable = false;
